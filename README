@@ -1,0 +1,15 @@
+# journaldb
+
+A database organized as a journal. 
+
+## Features
+
+- Database in a clear text file
+- Synchronized writes via agents
+- Audit trail
+- Undo
+- Redo
+
+## License
+
+AGPLv3
