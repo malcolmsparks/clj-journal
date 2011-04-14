@@ -18,18 +18,18 @@
   (log [this e]
        (.write this (str e))
        (.write this "\n")
-       (.flush this)
-       )
+       (.flush this))
 
   clojure.lang.IRef
-  (log [this e] (alter this conj e))
-  )
+  (log [this e] (alter this conj e)))
 
 (defprotocol State
   (update [this f])
   (get-map [this]))
 
 (declare this-binding)
+
+(def *user* "Bob Admin")
 
 (extend-protocol State
   nil
@@ -49,7 +49,10 @@
 (defrecord Database [journal state]
   Changeable
   (change [_ event] (dosync
-                     (log journal (assoc event :when (tf/unparse (tf/formatters :basic-date-time) (time/now))))
+                     (log journal
+                          (merge {:by *user*
+                                  :when (tf/unparse (tf/formatters :basic-date-time) (time/now))}
+                                 event))
                      (update state (:what event))))
   (get-journal [this] journal)
   (get-state [this] (get-map state)))
