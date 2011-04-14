@@ -2,24 +2,37 @@
   (:use journaldb.core clojure.test clojure.contrib.pprint)
   (:require [clojure.java.io :as io]))
 
-(defn add-user [db userid name]
-  (change db (because (format "Access approved for user '%s'" name)
-                      `(assoc-in [:users ~userid] ~name)
-                      )))
+(defn add-user [db userid name jira]
+  (change db (because (format "Access approved for user '%s' under JIRA %s" name jira)
+                      `(assoc-in [:users ~userid] ~name))))
 
-;; TODO: Test with in-memory journal as (ref []) rather than StringWriter.
+(defn add-test-users [db]
+  (add-user db "malc" "Malcolm Sparks" "RTGM-123")
+  (add-user db "tim" "Tim Williams" "RTGM-124")
+  (add-user db "hankster" "Steve Hankin" "RTGM-125"))
 
-(deftest add-users
+(deftest add-users-with-backing-writer
   (let [underlying (java.io.StringWriter.)
         journal (io/writer underlying)
         state (ref {})
         db (create-database journal state)]
-    (add-user db "malc" "Malcolm Sparks")
-    (add-user db "tim" "Tim Williams")
-    (add-user db "hankster" "Steve Hankin")
+    (add-test-users db)
     (println "State is :-")
     (pprint (get-state db))
     (println "Journal is :-")
     (doall (map println (line-seq (io/reader (java.io.StringReader. (str underlying))))))
     (is (= 3 (count (line-seq (io/reader (java.io.StringReader. (str underlying)))))))
+    (is (= 3 (count (:users (get-state db)))))))
+
+
+(deftest add-users-with-backing-ref
+  (let [journal (ref [])
+        state (ref {})
+        db (create-database journal state)]
+    (add-test-users db)
+    (println "State is :-")
+    (pprint (get-state db))
+    (println "Journal is :-")
+    (doall (map pprint @journal))
+    (is (= 3 (count @journal)))
     (is (= 3 (count (:users (get-state db)))))))
