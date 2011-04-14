@@ -34,17 +34,15 @@
 (extend-protocol State
   nil
   (update [this f] this)
-  (get-map [this] nil)
-
+  
   clojure.lang.IRef
   (update [this f] (binding [this-binding this]
                      (eval `(alter this-binding ~@f))))
-  (get-map [this] @this))
+  )
 
 (defprotocol Changeable
   (change [_ event])
-  (get-journal [this])
-  (get-state [this]))
+  )
 
 (defrecord Database [journal state]
   Changeable
@@ -54,8 +52,7 @@
                                   :when (tf/unparse (tf/formatters :basic-date-time) (time/now))}
                                  event))
                      (update state (:what event))))
-  (get-journal [this] journal)
-  (get-state [this] (get-map state)))
+  )
 
 (defn create-database [journal state]
   (Database. journal state))

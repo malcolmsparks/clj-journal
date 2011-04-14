@@ -8,8 +8,7 @@
 
 (defn add-test-users [db]
   (add-user db "malc" "Malcolm Sparks" "RTGM-123")
-  (add-user db "tim" "Tim Williams" "RTGM-124")
-  )
+  (add-user db "tim" "Tim Williams" "RTGM-124"))
 
 (deftest add-users-with-backing-writer
   (let [underlying (java.io.StringWriter.)
@@ -18,11 +17,11 @@
         db (create-database journal state)]
     (add-test-users db)
     (println "State is :-")
-    (pprint (get-state db))
+    (pprint @(:state db))
     (println "Journal is :-")
     (doall (map println (line-seq (io/reader (java.io.StringReader. (str underlying))))))
     (is (= 2 (count (line-seq (io/reader (java.io.StringReader. (str underlying)))))))
-    (is (= 2 (count (:users (get-state db)))))))
+    (is (= 2 (count (:users @(:state db)))))))
 
 (deftest add-users-with-backing-ref
   (let [journal (ref [])
@@ -31,7 +30,7 @@
     (add-test-users db)
     (doall (map pprint @journal))
     (is (= 2 (count @journal)))
-    (is (= 2 (count (:users (get-state db)))))))
+    (is (= 2 (count (:users @(:state db)))))))
 
 (defn recover [journal db]
   (dorun (for [e journal]
@@ -39,13 +38,17 @@
 
 (deftest recover-users-with-backing-ref
   (let [journal (ref [])
-        db (create-database journal (ref {}))
-        new-db (create-database (ref []) (ref {}))]
+        db (create-database journal (ref {}))]
+    ;; Bob adds some users
     (add-test-users db)
-    (binding [*user* "Mary Rescue"]
-      (recover @journal new-db)
-      (is (= 2 (count (:users (get-state new-db)))))
-      (add-user new-db "hankster" "Steve Hankin" "RTGM-125")
-      (is (= 3 (count (:users (get-state new-db))))))
-    ))
+    ;; Oh dear, a database crash!
+    ;; Mary recovers
+    (let [db (create-database (ref []) (ref {}))]
+      (binding [*user* "Mary Rescue"]
+        (recover @journal db)
+        (is (= 2 (count (:users @(:state db)))))
+        (add-user db "hankster" "Steve Hankin" "RTGM-125")
+        (is (= 3 (count (:users @(:state db)))))
+        (is (= "Bob Admin" (:by (first @(:journal db)))))
+        (is (= "Mary Rescue" (:by (last @(:journal db)))))))))
 
