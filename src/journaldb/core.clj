@@ -5,20 +5,27 @@
   (:use clojure.contrib.pprint))
 
 (defprotocol Journal
-  (log [this e]))
+  (log [this e])
+  (log-entries [this])
+  )
 
 (extend-protocol Journal
   nil
   (log [_ _] nil)
+  (log-entries [_] nil)
 
   clojure.lang.PersistentVector
   (log [this e] (conj this e))
+  (log-entries [this] this)
 
   java.io.BufferedWriter
   (log [this e]
        (.write this (str e))
        (.write this "\n")
        (.flush this))
+
+  java.io.BufferedReader
+  (log-entries [this] (map read-string (line-seq this)))
 
   clojure.lang.IRef
   (log [this e] (alter this conj e)))
@@ -34,15 +41,13 @@
 (extend-protocol State
   nil
   (update [this f] this)
-  
+
   clojure.lang.IRef
   (update [this f] (binding [this-binding this]
-                     (eval `(alter this-binding ~@f))))
-  )
+                     (eval `(alter this-binding ~@f)))))
 
 (defprotocol Changeable
-  (change [_ event])
-  )
+  (change [_ event]))
 
 (defrecord Database [journal state]
   Changeable
@@ -51,8 +56,7 @@
                           (merge {:by *user*
                                   :when (tf/unparse (tf/formatters :basic-date-time) (time/now))}
                                  event))
-                     (update state (:what event))))
-  )
+                     (update state (:what event)))))
 
 (defn create-database [journal state]
   (Database. journal state))
@@ -60,3 +64,8 @@
 (defn because [why what]
   {:what what
    :why why})
+
+(defn recover-db-from-journal [journal db]
+  (dorun (for [e (log-entries journal)]
+           (change db e))))
+

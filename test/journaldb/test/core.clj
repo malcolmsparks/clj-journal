@@ -32,23 +32,34 @@
     (is (= 2 (count @journal)))
     (is (= 2 (count (:users @(:state db)))))))
 
-(defn recover [journal db]
-  (dorun (for [e journal]
-           (change db e))))
-
 (deftest recover-users-with-backing-ref
   (let [journal (ref [])
         db (create-database journal (ref {}))]
     ;; Bob adds some users
     (add-test-users db)
-    ;; Oh dear, a database crash!
-    ;; Mary recovers
+    ;; Oh dear, we just rebound our database and lost it!
     (let [db (create-database (ref []) (ref {}))]
+      ;; Never mind, we still have the journal, let's recover.
       (binding [*user* "Mary Rescue"]
-        (recover @journal db)
+        (recover-db-from-journal @journal db)
         (is (= 2 (count (:users @(:state db)))))
         (add-user db "hankster" "Steve Hankin" "RTGM-125")
         (is (= 3 (count (:users @(:state db)))))
         (is (= "Bob Admin" (:by (first @(:journal db)))))
         (is (= "Mary Rescue" (:by (last @(:journal db)))))))))
+
+(deftest recover-users-with-backing-file
+  (let [state (ref {})
+        db (create-database (io/writer "/home/malcolm/tmp/journal") state)]
+    (add-test-users db)
+    (let [db (create-database (ref []) (ref {}))]
+      ;; Never mind, we still have the journal, let's recover.
+      (binding [*user* "Mary Rescue"]
+        (recover-db-from-journal (io/reader "/home/malcolm/tmp/journal") db)
+        (is (= 2 (count (:users @(:state db)))))
+        (add-user db "hankster" "Steve Hankin" "RTGM-125")
+        (is (= 3 (count (:users @(:state db)))))
+        (is (= "Bob Admin" (:by (first @(:journal db)))))
+        (is (= "Mary Rescue" (:by (last @(:journal db)))))))))
+
 
