@@ -1,6 +1,7 @@
 (ns journaldb.core
   (:require [clojure.java.io :as io]
-            [clj-time.core :as time])
+            [clj-time.core :as time]
+            [clj-time.format :as tf])
   (:use clojure.contrib.pprint))
 
 (defprotocol Journal
@@ -14,9 +15,11 @@
   (log [this e] (conj this e))
 
   java.io.BufferedWriter
-  (log [this e] (binding [*out* this]
-                  (pprint e)
-                  (flush)))
+  (log [this e]
+       (.write this (str e))
+       (.write this "\n")
+       (.flush this)
+       )
 
   clojure.lang.IRef
   (log [this e] (alter this conj e))
@@ -46,7 +49,7 @@
 (defrecord Database [journal state]
   Changeable
   (change [_ event] (dosync
-                     (log journal (assoc event :when (time/now)))
+                     (log journal (assoc event :when (tf/unparse (tf/formatters :basic-date-time) (time/now))))
                      (update state (:what event))))
   (get-journal [this] journal)
   (get-state [this] (get-map state)))

@@ -21,5 +21,5 @@
     (pprint (get-state db))
     (println "Journal is :-")
     (doall (map println (line-seq (io/reader (java.io.StringReader. (str underlying))))))
-    (is (= 9 (count (line-seq (io/reader (java.io.StringReader. (str underlying)))))))
+    (is (= 3 (count (line-seq (io/reader (java.io.StringReader. (str underlying)))))))
     (is (= 3 (count (:users (get-state db)))))))
