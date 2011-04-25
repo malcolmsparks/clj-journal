@@ -10,6 +10,12 @@
                :with {:userid userid :name name}}
               (because ["Access approved for user '%s' under JIRA %s" :userid :name]))))
 
+;; TODO: Order journal entry maps such that all the specific bits
+;; (when, with) appear at the front, leaving the rest at the back for
+;; maximum 'compressibility'.
+
+;; TODO: Test gzip compression over a lot of entries.
+
 (defn add-test-users [db]
   (add-user db "malc" "Malcolm Sparks" "RTGM-123")
   (add-user db "tim" "Tim Williams" "RTGM-124"))
