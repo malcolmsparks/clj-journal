@@ -4,9 +4,10 @@
 
 (defn add-user [db userid name jira]
   (change db
-          (-> {:what {:how `(fn [~(symbol 'state) ~(symbol 'data)]
-                              (assoc-in ~(symbol 'state) [:users (:userid ~(symbol 'data))] (:name ~(symbol 'data))))
-                      :with {:userid userid :name name}}}
+          (-> {
+               :how `(fn [~(symbol 'state) ~(symbol 'data)]
+                       (assoc-in ~(symbol 'state) [:users (:userid ~(symbol 'data))] (:name ~(symbol 'data))))
+               :with {:userid userid :name name}}
               (because ["Access approved for user '%s' under JIRA %s" :userid :name]))))
 
 (defn add-test-users [db]

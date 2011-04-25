@@ -53,7 +53,7 @@
                           (merge {:by *user*
                                   :when (tf/unparse (tf/formatters :basic-date-time) (time/now))}
                                  event))
-                     (update state (get-in event [:what :how]) (get-in event [:what :with])))))
+                     (update state (get event :how) (get event :with)))))
 
 (defn create-database [journal state]
   (Database. journal state))
