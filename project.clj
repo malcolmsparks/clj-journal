@@ -1,5 +1,8 @@
-(defproject journaldb "1.0.0-SNAPSHOT"
-  :description "A database organized as a journal."
+(defproject clj-journal "1.0"
+
+  :description "A Clojure journal library for logging, audit and
+  'prevalent' persistence of data structures."
+
   :dependencies [[org.clojure/clojure "1.2.0"]
                  [org.clojure/clojure-contrib "1.2.0"]
                  [clj-time "0.3.0"]

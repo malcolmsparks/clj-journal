@@ -1,5 +1,21 @@
-(ns journaldb.test.core
-  (:use journaldb.core clojure.test clojure.contrib.pprint)
+;; Copyright 2010 Malcolm Sparks.
+;;
+;; This file is part of Plugboard.
+;;
+;; Plugboard is free software: you can redistribute it and/or modify it under the
+;; terms of the GNU Affero General Public License as published by the Free
+;; Software Foundation, either version 3 of the License, or (at your option) any
+;; later version.
+;;
+;; Plugboard is distributed in the hope that it will be useful but WITHOUT ANY
+;; WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+;; A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more
+;; details.
+;;
+;; Please see the LICENSE file for a copy of the GNU Affero General Public License.
+
+(ns clj-journal.test.core
+  (:use clj-journal.core clojure.test clojure.contrib.pprint)
   (:require [clojure.java.io :as io]))
 
 (defn add-user [db userid name jira]
@@ -17,8 +33,8 @@
 ;; TODO: Test gzip compression over a lot of entries.
 
 (defn add-test-users [db]
-  (add-user db "malc" "Malcolm Sparks" "RTGM-123")
-  (add-user db "tim" "Tim Williams" "RTGM-124"))
+  (add-user db "alice" "Alice Smith" "CLJN-123")
+  (add-user db "betty" "Betty Brown" "CLJN-124"))
 
 (deftest add-users-with-backing-writer
   (let [underlying (java.io.StringWriter.)
@@ -60,16 +76,16 @@
 
 (deftest recover-users-with-backing-file
   (let [state (ref {})
-        db (create-database (io/writer "/home/malcolm/tmp/journal") state)]
+        db (create-database (io/writer "journal") state)]
     (add-test-users db)
     (let [db (create-database (ref []) (ref {}))]
       ;; Never mind, we still have the journal, let's recover.
       (binding [*user* "Mary Rescue"]
-        (recover-db-from-journal (io/reader "/home/malcolm/tmp/journal") db)
+        (recover-db-from-journal (io/reader "journal") db)
         (is (= 2 (count (:users @(:state db)))))
         (add-user db "hankster" "Steve Hankin" "RTGM-125")
         (is (= 3 (count (:users @(:state db)))))
         (is (= "Bob Admin" (:by (first @(:journal db)))))
         (is (= "Mary Rescue" (:by (last @(:journal db)))))))))
 
-;; Log rotation stuff
+;; TODO: Log rotation stuff
