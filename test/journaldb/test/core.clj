@@ -3,8 +3,11 @@
   (:require [clojure.java.io :as io]))
 
 (defn add-user [db userid name jira]
-  (change db (because (format "Access approved for user '%s' under JIRA %s" name jira)
-                      `(assoc-in [:users ~userid] ~name))))
+  (change db
+          (-> {:what {:how `(fn [~(symbol 'state) ~(symbol 'userid) ~(symbol 'name)]
+                              (assoc-in ~(symbol 'state) [:users ~(symbol 'userid)] ~(symbol 'name)))
+                      :with [userid name]}}
+              (because ["Access approved for user '%s' under JIRA %s" :userid :name]))))
 
 (defn add-test-users [db]
   (add-user db "malc" "Malcolm Sparks" "RTGM-123")
@@ -62,4 +65,4 @@
         (is (= "Bob Admin" (:by (first @(:journal db)))))
         (is (= "Mary Rescue" (:by (last @(:journal db)))))))))
 
-
+;; Log rotation stuff
