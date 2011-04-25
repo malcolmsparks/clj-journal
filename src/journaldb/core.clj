@@ -29,7 +29,7 @@
   (log [this e] (alter this conj e)))
 
 (defprotocol State
-  (update [this f args]))
+  (update [this f data]))
 
 (declare this-binding)
 
@@ -37,11 +37,11 @@
 
 (extend-protocol State
   nil
-  (update [this f args] this)
+  (update [this f data] this)
 
   clojure.lang.IRef
-  (update [this f args] (binding [this-binding this]
-                          (apply alter (concat [this-binding (eval f)] args)))))
+  (update [this f data] (binding [this-binding this]
+                          (alter this-binding (eval f) data))))
 
 (defprotocol Changeable
   (change [_ event]))
